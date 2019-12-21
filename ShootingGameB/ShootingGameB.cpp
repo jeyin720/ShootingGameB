@@ -21,6 +21,15 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int,HWND&);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 
+LPDIRECT3D9 g_pD3D;//Direct의 다양한 기능을 담고있는 메모리 (본체 느낌~) 
+LPDIRECT3DDEVICE9 g_pD3DDevice;//실질적인 화면 Device (보여지는 화면)
+D3DCOLOR g_ClearColor = D3DCOLOR_XRGB(0, 0, 255);
+
+void Render();
+bool InitDirect3D(HWND hwnd);
+void ReleaseDirect3D();
+
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -43,7 +52,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
-    
+	InitDirect3D(hWnd);
 
     MSG msg;
 	ZeroMemory(&msg, sizeof(msg));
@@ -58,10 +67,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			DispatchMessage(&msg);
 		}
 		else {
-
+			Render();
 		}
 	}
 
+	ReleaseDirect3D();
     return (int) msg.wParam;
 }
 
@@ -143,4 +153,49 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
+void Render()
+{
+	if (g_pD3DDevice == NULL)
+		return;
+	g_pD3DDevice->Clear(0, NULL, D3DCLEAR_TARGET, g_ClearColor, 1.0f, 0);
+
+	g_pD3DDevice->Present(NULL, NULL, NULL, NULL);
+}
+bool InitDirect3D(HWND hwnd)
+{
+	//DX 오브젝트 생성
+	g_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
+
+	if (g_pD3D == NULL)
+		return false;
+
+	D3DPRESENT_PARAMETERS d3dpp;
+	ZeroMemory(&d3dpp, sizeof(d3dpp));
+
+	d3dpp.Windowed = TRUE;
+	d3dpp.hDeviceWindow = hwnd;
+	d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+	d3dpp.BackBufferCount = 1; //보여지는 front와 바꿔주는 
+	d3dpp.BackBufferWidth = 640;
+	d3dpp.BackBufferHeight = 480;
+
+	if (g_pD3D->CreateDevice(D3DADAPTER_DEFAULT
+		, D3DDEVTYPE_HAL
+		, hwnd
+		, D3DCREATE_HARDWARE_VERTEXPROCESSING
+		, &d3dpp
+		, &g_pD3DDevice) == E_FAIL)
+		return false;
+}
+void ReleaseDirect3D()
+{
+	if (g_pD3DDevice != NULL)
+		g_pD3DDevice->Release();
+	if (g_pD3D != NULL)
+		g_pD3D->Release();
+
+	g_pD3DDevice = NULL;
+	g_pD3D = NULL;
+}
+
 
