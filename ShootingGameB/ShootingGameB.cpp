@@ -25,7 +25,7 @@ LPDIRECT3D9 g_pD3D;//Direct의 다양한 기능을 담고있는 메모리 (본�
 LPDIRECT3DDEVICE9 g_pD3DDevice;//실질적인 화면 Device (보여지는 화면)
 D3DCOLOR g_ClearColor = D3DCOLOR_XRGB(0, 0, 255);
 
-void Render();
+void Render(LPD3DXSPRITE m_Sprite, LPDIRECT3DTEXTURE9 m_Texture);
 bool InitDirect3D(HWND hwnd);
 void ReleaseDirect3D();
 
@@ -54,6 +54,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	InitDirect3D(hWnd);
 
+	LPD3DXSPRITE m_Sprite;
+	LPDIRECT3DTEXTURE9 m_Texture;
+	D3DXCreateSprite(g_pD3DDevice, &m_Sprite);
+
+	D3DXCreateTextureFromFileEx(g_pD3DDevice, _T("Airplane.bmp"), 0, 0, 0, 0, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, D3DX_FILTER_NONE, D3DX_DEFAULT, D3DCOLOR_XRGB(0, 0, 0), NULL, NULL, &m_Texture);
+
+	
+
     MSG msg;
 	ZeroMemory(&msg, sizeof(msg));
 
@@ -67,10 +75,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			DispatchMessage(&msg);
 		}
 		else {
-			Render();
+			Render(m_Sprite,m_Texture);
 		}
 	}
 
+	if (m_Texture != NULL)
+	{
+		m_Texture->Release();
+		m_Texture = NULL;
+	}
+	if (m_Sprite != NULL)
+	{
+		m_Sprite->Release();
+		m_Sprite = NULL;
+	}
 	ReleaseDirect3D();
     return (int) msg.wParam;
 }
@@ -153,12 +171,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
-void Render()
+void Render(LPD3DXSPRITE m_Sprite,LPDIRECT3DTEXTURE9 m_Texture)
 {
 	if (g_pD3DDevice == NULL)
 		return;
 	g_pD3DDevice->Clear(0, NULL, D3DCLEAR_TARGET, g_ClearColor, 1.0f, 0);
+	if (SUCCEEDED(g_pD3DDevice->BeginScene())){
+		D3DXVECTOR3 cen = { 32.f,32.f,0.f };
+		D3DXVECTOR3 pos = { 300.f,100.f,0.f };
 
+		m_Sprite->Begin(D3DXSPRITE_ALPHABLEND);
+		m_Sprite->Draw(m_Texture, NULL, &cen, &pos, D3DCOLOR_XRGB(255, 255, 255));
+		m_Sprite->End();
+		g_pD3DDevice->EndScene();
+	}
 	g_pD3DDevice->Present(NULL, NULL, NULL, NULL);
 }
 bool InitDirect3D(HWND hwnd)
