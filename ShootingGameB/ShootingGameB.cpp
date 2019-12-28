@@ -1,4 +1,4 @@
-// ShootingGameB.cpp: 응용 프로그램의 진입점을 정의합니다.
+﻿// ShootingGameB.cpp: 응용 프로그램의 진입점을 정의합니다.
 //
 
 #include "stdafx.h"
@@ -40,6 +40,9 @@ LPDIRECT3DTEXTURE9 g_Shoot;
 boolean shootAlive = false;
 CInput* g_Input;
 
+LPD3DXFONT g_Font;
+int g_Score = 0;
+
 D3DXVECTOR3 g_InvaderDir = { 1.f,0.f,0.f };
 
 
@@ -49,6 +52,8 @@ void ReleaseDirect3D();
 void DrawSprite(LPD3DXSPRITE m_Sprite, LPDIRECT3DTEXTURE9 m_Texture, D3DXVECTOR3 cen, D3DXVECTOR3 pos);
 void ReleaseTexture(LPDIRECT3DTEXTURE9 Texture);
 void ReleaseSprite(LPD3DXSPRITE Sprite);
+LPD3DXFONT CreateFont(LPDIRECT3DDEVICE9 pD3DDevice, int height, int width);
+void ReleaseFont(LPD3DXFONT font);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -85,6 +90,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	D3DXCreateTextureFromFileEx(g_pD3DDevice, _T("monster.bmp"), 0, 0, 0, 0, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, D3DX_FILTER_NONE, D3DX_DEFAULT, D3DCOLOR_XRGB(0, 0, 0), NULL, NULL, &g_Invader);
 	D3DXCreateTextureFromFileEx(g_pD3DDevice, _T("shoot.bmp"), 0, 0, 0, 0, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, D3DX_FILTER_NONE, D3DX_DEFAULT, D3DCOLOR_XRGB(0, 0, 0), NULL, NULL, &g_Shoot);
 
+	g_Font = CreateFont(g_pD3DDevice, 24, 12);
 	
 
     MSG msg;
@@ -112,6 +118,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 			
 			float speed = 3;
+			//Invader 화면 가장자리 충돌 처리
 			if (g_InvaderPos.x > 640.f-32.f) {
 				g_InvaderDir = { -1.f,0.f,0.f };
 				g_InvaderPos += {0.f, 10.f, 0.f};
@@ -122,12 +129,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			}
 
 			g_InvaderPos = g_InvaderPos + g_InvaderDir * speed;
-
+			//Shoot 화면 가장자리 충돌 처리
 			if (g_ShootPos.y < 16.f) {
 				g_ShootPos = { -999.f,-999.f,0.f };
 				shootAlive = false;
 			}
-
+			//Shoot 발사
 			if (g_Input->IsSpaceKeyPressed()) {
 				if (!shootAlive) {
 					g_ShootPos = g_PcPos + D3DXVECTOR3(0.f, -20.f, 0.f);
@@ -142,16 +149,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	//Release
-	if (g_Invader != NULL)
-	{
-		g_Invader->Release();
-		g_Invader = NULL;
-	}
-	if (m_Texture != NULL)
-	{
-		m_Texture->Release();
-		m_Texture = NULL;
-	}
+	ReleaseFont(g_Font);
+	ReleaseTexture(g_Shoot);
+	ReleaseSprite(g_ShootSprite);
+	ReleaseTexture(g_Invader);
+	ReleaseSprite(g_InvaderSprite);
+	ReleaseTexture(m_Texture);
 	ReleaseSprite(m_Sprite);
 
 	ReleaseDirect3D();
@@ -253,6 +256,12 @@ void Render()
 		pos = g_ShootPos;
 		DrawSprite(g_ShootSprite, g_Shoot, cen, pos);
 		
+		// Font 사용
+		RECT rc;
+		rc = { 0,0,640,480 };
+		WCHAR szScore[100];
+		swprintf_s(szScore, _T("점수: %d"), 0);
+		g_Font->DrawTextW(NULL, szScore, -1, &rc, DT_LEFT | DT_TOP, D3DCOLOR_XRGB(255, 255, 255));
 
 		g_pD3DDevice->EndScene();
 	}
@@ -313,5 +322,27 @@ void ReleaseDirect3D()
 	g_pD3DDevice = NULL;
 	g_pD3D = NULL;
 }
+LPD3DXFONT CreateFont(LPDIRECT3DDEVICE9 pD3DDevice, int height, int width) {
+	LPD3DXFONT font;
+	D3DXFONT_DESC desc;
+	ZeroMemory(&desc, sizeof(D3DXFONT_DESC));
 
+	desc.CharSet = HANGUL_CHARSET;
+	desc.Height = height;
+	desc.Width = width;
+	desc.Weight = FW_NORMAL;
+	desc.Quality = DEFAULT_QUALITY;
+	desc.MipLevels = 1;
+
+	auto hr = D3DXCreateFontIndirect(pD3DDevice, &desc, &font);
+	if (FAILED(hr))
+		return NULL;
+	return font;
+}
+
+void ReleaseFont(LPD3DXFONT font) {
+	if (font != NULL) {
+		font->Release();
+	}
+}
 
