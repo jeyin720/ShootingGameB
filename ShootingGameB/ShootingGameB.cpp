@@ -141,6 +141,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					shootAlive = true;
 				}
 			}
+			if (shootAlive) {
+				if (g_ShootPos.x + 8 > g_InvaderPos.x - 32 && g_ShootPos.y - 16 < g_InvaderPos.y + 32 && g_ShootPos.x - 8 < g_InvaderPos.x + 32 && g_ShootPos.y + 16 > g_InvaderPos.y - 32) {
+					g_Score += 10;
+					g_InvaderPos = { 32.f,32.f,0.f };
+					shootAlive = false;
+					g_ShootPos = { -999.f,-999.f,0.f };
+				}
+			}
 
 			if(shootAlive) g_ShootPos = g_ShootPos + D3DXVECTOR3(0.f, -1.f, 0.f)*speed;
 
@@ -260,7 +268,7 @@ void Render()
 		RECT rc;
 		rc = { 0,0,640,480 };
 		WCHAR szScore[100];
-		swprintf_s(szScore, _T("점수: %d"), 0);
+		swprintf_s(szScore, _T("점수: %d"), g_Score);
 		g_Font->DrawTextW(NULL, szScore, -1, &rc, DT_LEFT | DT_TOP, D3DCOLOR_XRGB(255, 255, 255));
 
 		g_pD3DDevice->EndScene();
