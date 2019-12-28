@@ -29,18 +29,26 @@ LPDIRECT3DDEVICE9 g_pD3DDevice;//실질적인 화면 Device (보여지는 화면
 D3DCOLOR g_ClearColor = D3DCOLOR_XRGB(0, 0, 255);
 D3DXVECTOR3 g_PcPos = { 320.f,400.f,0.f };
 D3DXVECTOR3 g_InvaderPos = { 32.f,32.f,0.f };
+D3DXVECTOR3 g_ShootPos = { -999.f,-999.f,0.f };
 
 LPD3DXSPRITE m_Sprite;
 LPD3DXSPRITE g_InvaderSprite;
+LPD3DXSPRITE g_ShootSprite;
 LPDIRECT3DTEXTURE9 m_Texture;
 LPDIRECT3DTEXTURE9 g_Invader;
+LPDIRECT3DTEXTURE9 g_Shoot;
+boolean shootAlive = false;
+CInput* g_Input;
+
+D3DXVECTOR3 g_InvaderDir = { 1.f,0.f,0.f };
 
 
 void Render();
 bool InitDirect3D(HWND hwnd);
 void ReleaseDirect3D();
 void DrawSprite(LPD3DXSPRITE m_Sprite, LPDIRECT3DTEXTURE9 m_Texture, D3DXVECTOR3 cen, D3DXVECTOR3 pos);
-
+void ReleaseTexture(LPDIRECT3DTEXTURE9 Texture);
+void ReleaseSprite(LPD3DXSPRITE Sprite);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -66,14 +74,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	InitDirect3D(hWnd);
 
-	auto g_Input = new CInput(hWnd, hInstance);
+	g_Input = new CInput(hWnd, hInstance);
 
 	
 	D3DXCreateSprite(g_pD3DDevice, &m_Sprite);
 	D3DXCreateSprite(g_pD3DDevice, &g_InvaderSprite);
+	D3DXCreateSprite(g_pD3DDevice, &g_ShootSprite);
 
 	D3DXCreateTextureFromFileEx(g_pD3DDevice, _T("Airplane.bmp"), 0, 0, 0, 0, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, D3DX_FILTER_NONE, D3DX_DEFAULT, D3DCOLOR_XRGB(0, 0, 0), NULL, NULL, &m_Texture);
 	D3DXCreateTextureFromFileEx(g_pD3DDevice, _T("monster.bmp"), 0, 0, 0, 0, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, D3DX_FILTER_NONE, D3DX_DEFAULT, D3DCOLOR_XRGB(0, 0, 0), NULL, NULL, &g_Invader);
+	D3DXCreateTextureFromFileEx(g_pD3DDevice, _T("shoot.bmp"), 0, 0, 0, 0, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, D3DX_FILTER_NONE, D3DX_DEFAULT, D3DCOLOR_XRGB(0, 0, 0), NULL, NULL, &g_Shoot);
 
 	
 
@@ -100,9 +110,38 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 			g_PcPos += keyDir * 4.f;
 
+			
+			float speed = 3;
+			if (g_InvaderPos.x > 640.f-32.f) {
+				g_InvaderDir = { -1.f,0.f,0.f };
+				g_InvaderPos += {0.f, 10.f, 0.f};
+			}
+			else if (g_InvaderPos.x < 32.f) {
+				g_InvaderDir = { 1.f,0.f,0.f };
+				g_InvaderPos += {0.f, 10.f, 0.f};
+			}
+
+			g_InvaderPos = g_InvaderPos + g_InvaderDir * speed;
+
+			if (g_ShootPos.y < 16.f) {
+				g_ShootPos = { -999.f,-999.f,0.f };
+				shootAlive = false;
+			}
+
+			if (g_Input->IsSpaceKeyPressed()) {
+				if (!shootAlive) {
+					g_ShootPos = g_PcPos + D3DXVECTOR3(0.f, -20.f, 0.f);
+					shootAlive = true;
+				}
+			}
+
+			if(shootAlive) g_ShootPos = g_ShootPos + D3DXVECTOR3(0.f, -1.f, 0.f)*speed;
+
 			Render();
 		}
 	}
+
+	//Release
 	if (g_Invader != NULL)
 	{
 		g_Invader->Release();
@@ -113,11 +152,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		m_Texture->Release();
 		m_Texture = NULL;
 	}
-	if (m_Sprite != NULL)
-	{
-		m_Sprite->Release();
-		m_Sprite = NULL;
-	}
+	ReleaseSprite(m_Sprite);
+
 	ReleaseDirect3D();
     return (int) msg.wParam;
 }
@@ -212,7 +248,12 @@ void Render()
 		DrawSprite(m_Sprite,m_Texture,cen,pos);
 		pos = g_InvaderPos;
 		DrawSprite(g_InvaderSprite, g_Invader, cen, pos);
+
+		cen = { 8.f,32.f,0.f };
+		pos = g_ShootPos;
+		DrawSprite(g_ShootSprite, g_Shoot, cen, pos);
 		
+
 		g_pD3DDevice->EndScene();
 	}
 	g_pD3DDevice->Present(NULL, NULL, NULL, NULL);
@@ -221,7 +262,20 @@ void DrawSprite(LPD3DXSPRITE m_Sprite, LPDIRECT3DTEXTURE9 m_Texture, D3DXVECTOR3
 	m_Sprite->Begin(D3DXSPRITE_ALPHABLEND);
 	m_Sprite->Draw(m_Texture, NULL, &cen, &pos, D3DCOLOR_XRGB(255, 255, 255));
 	m_Sprite->End();
-
+}
+void ReleaseSprite(LPD3DXSPRITE Sprite) {
+	if (Sprite != NULL)
+	{
+		Sprite->Release();
+		Sprite = NULL;
+	}
+}
+void ReleaseTexture(LPDIRECT3DTEXTURE9 Texture) {
+	if (Texture != NULL)
+	{
+		Texture->Release();
+		Texture = NULL;
+	}
 }
 bool InitDirect3D(HWND hwnd)
 {
