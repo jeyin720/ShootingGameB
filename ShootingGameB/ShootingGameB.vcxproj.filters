@@ -27,12 +27,18 @@
     <ClInclude Include="ShootingGameB.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="CInput.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="ShootingGameB.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="CInput.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

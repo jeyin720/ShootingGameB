@@ -3,11 +3,14 @@
 
 #include "stdafx.h"
 #include "ShootingGameB.h"
+#include "CInput.h"
 #include <d3d9.h>
 #include <d3dx9.h>
 
 #pragma comment(lib,"d3d9.lib")
 #pragma comment(lib,"d3dx9.lib")
+#pragma comment(lib,"dinput8.lib")
+#pragma comment(lib,"dxguid.lib")
 
 #define MAX_LOADSTRING 100
 
@@ -24,6 +27,8 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 LPDIRECT3D9 g_pD3D;//Direct의 다양한 기능을 담고있는 메모리 (본체 느낌~) 
 LPDIRECT3DDEVICE9 g_pD3DDevice;//실질적인 화면 Device (보여지는 화면)
 D3DCOLOR g_ClearColor = D3DCOLOR_XRGB(0, 0, 255);
+D3DXVECTOR3 g_PcPos = { 320.f,400.f,0.f };
+
 
 void Render(LPD3DXSPRITE m_Sprite, LPDIRECT3DTEXTURE9 m_Texture);
 bool InitDirect3D(HWND hwnd);
@@ -54,8 +59,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	InitDirect3D(hWnd);
 
+	auto g_Input = new CInput(hWnd, hInstance);
+
 	LPD3DXSPRITE m_Sprite;
 	LPDIRECT3DTEXTURE9 m_Texture;
+	LPDIRECT3DTEXTURE9 g_Invader;
 	D3DXCreateSprite(g_pD3DDevice, &m_Sprite);
 
 	D3DXCreateTextureFromFileEx(g_pD3DDevice, _T("Airplane.bmp"), 0, 0, 0, 0, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, D3DX_FILTER_NONE, D3DX_DEFAULT, D3DCOLOR_XRGB(0, 0, 0), NULL, NULL, &m_Texture);
@@ -75,6 +83,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			DispatchMessage(&msg);
 		}
 		else {
+			g_Input->ReadKeyboard();
+			if (g_Input->IsEscapePressed())
+				msg.message = WM_QUIT;
+
+			D3DXVECTOR3 keyDir = { 0.f,0.f,0.f };
+
+			g_Input->GetInputDir(keyDir);
+
+			g_PcPos += keyDir * 4.f;
+
 			Render(m_Sprite,m_Texture);
 		}
 	}
@@ -178,7 +196,7 @@ void Render(LPD3DXSPRITE m_Sprite,LPDIRECT3DTEXTURE9 m_Texture)
 	g_pD3DDevice->Clear(0, NULL, D3DCLEAR_TARGET, g_ClearColor, 1.0f, 0);
 	if (SUCCEEDED(g_pD3DDevice->BeginScene())){
 		D3DXVECTOR3 cen = { 32.f,32.f,0.f };
-		D3DXVECTOR3 pos = { 300.f,100.f,0.f };
+		D3DXVECTOR3 pos = g_PcPos;
 
 		m_Sprite->Begin(D3DXSPRITE_ALPHABLEND);
 		m_Sprite->Draw(m_Texture, NULL, &cen, &pos, D3DCOLOR_XRGB(255, 255, 255));
