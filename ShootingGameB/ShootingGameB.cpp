@@ -141,6 +141,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					shootAlive = true;
 				}
 			}
+			//Shoot Invader 충돌 처리
 			if (shootAlive) {
 				if (g_ShootPos.x + 8 > g_InvaderPos.x - 32 && g_ShootPos.y - 16 < g_InvaderPos.y + 32 && g_ShootPos.x - 8 < g_InvaderPos.x + 32 && g_ShootPos.y + 16 > g_InvaderPos.y - 32) {
 					g_Score += 10;
