@@ -1,1 +1,1 @@
-# 슈팅 게임 :small_airplane:
+# 슈팅 게임 :rocket:
